@@ -15,6 +15,9 @@ Important notes:
 3. During the pre-ICO ETH is accepted only from wallets compliant with ERC-20 token standard. (recommended to use: MyEtherWallet). Do not send ETH directly from cryptocurrency exchanges (Coinbase, Kraken, Poloniex etc.)!
 4. We'll send back all ETH in case of minimal cap is not collected.
 
+## Deploy
+The best way to get an idea how to deploy this contracts is to look at `migrations` folder
+
 ## How to setup development environment and run tests?
 
 1. Install `docker` if you don't have it.
