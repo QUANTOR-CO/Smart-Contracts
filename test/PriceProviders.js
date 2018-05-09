@@ -1,6 +1,9 @@
 const EthPriceProvider = artifacts.require("EthPriceProvider");
 const BtcPriceProvider = artifacts.require("BtcPriceProvider");
 
+const EthPriceProviderHelper = artifacts.require("EthPriceProviderHelper");
+const PriceReceiverHelper = artifacts.require("PriceReceiverHelper");
+
 const assertJump = function(error) {
   assert.isAbove(error.message.search('VM Exception while processing transaction: revert'), -1, 'Invalid opcode error must be returned');
 };
@@ -178,13 +181,13 @@ contract('EthPriceProvider', function (accounts) {
     await this.ethPriceProvider.startUpdate(30000, { value: web3.toWei(10), from: accounts[0] });
     await this.ethPriceProvider.stopUpdate({ from: accounts[0] });
 
-    const oldBalance = web3.eth.getBalance(accounts[0]).toNumber();
+    const oldBalance = web3.eth.getBalance(accounts[0]);
 
     await this.ethPriceProvider.withdraw(accounts[0], { from: accounts[0] });
 
-    const newBalance = web3.eth.getBalance(accounts[0]).toNumber();
-    assert.equal(0, web3.eth.getBalance(this.ethPriceProvider.address).toNumber());
-    assert.equal(true, newBalance > oldBalance);
+    const newBalance = web3.eth.getBalance(accounts[0]);
+    assert(web3.eth.getBalance(this.ethPriceProvider.address).eq(0));
+    assert(newBalance.gt(oldBalance));
   });
 
   it('should not allow to call update directly', async function () {
@@ -204,4 +207,45 @@ contract('EthPriceProvider', function (accounts) {
     }
     assert.fail('should have thrown before');
   });
+
+  it('complex tests for price receiver/provider', async function () {
+    const provider = await EthPriceProviderHelper.new({from: accounts[0]});
+    const receiver = await PriceReceiverHelper.new({from: accounts[0]});
+    await provider.setWatcher(receiver.address, {from: accounts[0]});
+    await receiver.setEthPriceProvider(provider.address, {from: accounts[0]});
+
+    // some checks, that ether will be spent from provider
+    await provider.startUpdate(86126, {value: web3.toWei(1, 'ether'), gasPrice:0, from: accounts[0]});
+
+    let providerBalance = await web3.eth.getBalance(provider.address);
+    const updatePrice = await provider.oraclize_getPrice_public.call();
+    assert(providerBalance.add(updatePrice).eq(web3.toWei(1, 'ether')));
+
+    await provider.emulateUpdate(11);
+    providerBalance = await web3.eth.getBalance(provider.address);
+    assert(providerBalance.add(updatePrice.mul(2)).eq(web3.toWei(1, 'ether')));
+
+    await provider.stopUpdate({from: accounts[0]});
+
+
+    //to small price 888.88
+    await provider.startUpdate(88888, {value: web3.toWei(1, 'ether'), from: accounts[0]});
+    await provider.emulateUpdate(11);
+    await provider.callCallback(11, "748.92000", "0x0");
+    assert.equal(0, (await provider.state()).toNumber());
+
+    //to big price 633.33
+    await provider.startUpdate(63333, {value: web3.toWei(1, 'ether'), from: accounts[0]});
+    await provider.emulateUpdate(11);
+    await provider.callCallback(11, "748.92000", "0x0");
+    assert.equal(0, (await provider.state()).toNumber());
+
+    //normal price
+    await provider.startUpdate(74000, {value: web3.toWei(1, 'ether'), from: accounts[0]});
+    await provider.emulateUpdate(11);
+    await provider.callCallback(11, "748.92000", "0x0");
+    assert((await receiver.receivedEthPrice()).eq(74892))
+
+  });
+
 });
