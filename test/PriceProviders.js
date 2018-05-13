@@ -27,9 +27,9 @@ contract('EthPriceProvider', function (accounts) {
     assert.equal(0, state);
   });
 
-  it('should have 2 hours updateInterval by default', async function () {
+  it('should have 12 hours updateInterval by default', async function () {
     const interval = (await this.ethPriceProvider.updateInterval()).toNumber();
-    assert.equal(7200, interval);
+    assert.equal(43200, interval);
   });
 
   it('should allow to start update only for owner', async function () {
