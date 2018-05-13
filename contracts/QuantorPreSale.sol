@@ -18,7 +18,7 @@ contract QuantorPreSale is Haltable, PriceReceiver {
 
   InvestorWhiteList public investorWhiteList;
 
-  uint public constant QNTUsdRate = 100; //in cents
+  uint public constant QNTUsdRate = 1; //0.01 cents fot one token
 
   uint public ethUsdRate;
 
