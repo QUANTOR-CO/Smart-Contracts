@@ -34,9 +34,9 @@ contract QuantorPreSale is Haltable, PriceReceiver {
 
   uint public weiRefunded = 0;
 
-  uint public startBlock;
+  uint public startTime;
 
-  uint public endBlock;
+  uint public endTime;
 
   bool public softCapReached = false;
 
@@ -54,12 +54,12 @@ contract QuantorPreSale is Haltable, PriceReceiver {
   event Refunded(address indexed holder, uint amount);
 
   modifier icoActive() {
-    require(block.number >= startBlock && block.number < endBlock);
+    require(now >= startTime && now < endTime);
     _;
   }
 
   modifier icoEnded() {
-    require(block.number >= endBlock);
+    require(now >= endTime);
     _;
   }
 
@@ -80,10 +80,9 @@ contract QuantorPreSale is Haltable, PriceReceiver {
     address _beneficiary,
     address _investorWhiteList,
     uint _baseEthUsdPrice,
-    uint _baseBtcUsdPrice,
 
-    uint _startBlock,
-    uint _endBlock
+    uint _startTime,
+    uint _endTime
   ) {
     hardCap = _hardCapQNT.mul(1 ether);
     softCap = _softCapQNT.mul(1 ether);
@@ -92,11 +91,10 @@ contract QuantorPreSale is Haltable, PriceReceiver {
     beneficiary = _beneficiary;
     investorWhiteList = InvestorWhiteList(_investorWhiteList);
 
-    startBlock = _startBlock;
-    endBlock = _endBlock;
+    startTime = _startTime;
+    endTime = _endTime;
 
     ethUsdRate = _baseEthUsdPrice;
-    btcUsdRate = _baseBtcUsdPrice;
   }
 
   function() payable minInvestment inWhiteList {
@@ -135,19 +133,9 @@ contract QuantorPreSale is Haltable, PriceReceiver {
     ethUsdRate = ethUsdPrice;
   }
 
-  function receiveBtcPrice(uint btcUsdPrice) external onlyBtcPriceProvider {
-    require(btcUsdPrice > 0);
-    btcUsdRate = btcUsdPrice;
-  }
-
   function setEthPriceProvider(address provider) external onlyOwner {
     require(provider != 0x0);
     ethPriceProvider = provider;
-  }
-
-  function setBtcPriceProvider(address provider) external onlyOwner {
-    require(provider != 0x0);
-    btcPriceProvider = provider;
   }
 
   function setNewWhiteList(address newWhiteList) external onlyOwner {

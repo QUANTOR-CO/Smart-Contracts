@@ -12,7 +12,6 @@ const beneficiary = web3.eth.accounts[9];
 const ethUsdPrice = 20000; //in cents
 const btcUsdPrice = 400000; //in cents
 const ethPriceProvider = web3.eth.accounts[8];
-const btcPriceProvider = web3.eth.accounts[7];
 
 function advanceToBlock(number) {
   if (web3.eth.blockNumber > number) {
@@ -26,19 +25,18 @@ function advanceToBlock(number) {
 
 contract('QuantorPreSale', function (accounts) {
   beforeEach(async function () {
-    this.startBlock = web3.eth.blockNumber;
-    this.endBlock = this.startBlock + 20;
+    this.startTime = web3.eth.blockNumber;
+    this.endTime = this.startTime + 20;
 
     this.token = await QuantorToken.new();
     this.whiteList = await InvestorWhiteList.new();
 
-    this.crowdsale = await QuantorPreSale.new(hardCap, softCap, this.token.address, beneficiary, this.whiteList.address, ethUsdPrice, btcUsdPrice, this.startBlock, this.endBlock);
+    this.crowdsale = await QuantorPreSale.new(hardCap, softCap, this.token.address, beneficiary, this.whiteList.address, ethUsdPrice, this.startTime, this.endTime);
     this.token.setTransferAgent(this.token.address, true);
     this.token.setTransferAgent(this.crowdsale.address, true);
     this.token.setTransferAgent(accounts[0], true);
 
     await this.crowdsale.setEthPriceProvider(ethPriceProvider);
-    await this.crowdsale.setBtcPriceProvider(btcPriceProvider);
 
     //transfer more than hardcap to test hardcap reach properly
     this.token.transfer(this.crowdsale.address, web3.toWei(30000000, "ether"));
@@ -109,14 +107,6 @@ contract('QuantorPreSale', function (accounts) {
     assert.equal(ethUsdRate, 25000);
   });
 
-  it('should allow to update BTC price by BTC price provider', async function () {
-    await this.crowdsale.receiveBtcPrice(420000, {from: btcPriceProvider});
-
-    const btcUsdRate = await this.crowdsale.btcUsdRate();
-
-    assert.equal(btcUsdRate, 420000);
-  });
-
   it('should not allow to update ETH price by not ETH price provider', async function () {
     try {
       await this.crowdsale.receiveEthPrice(25000, {from: accounts[2]});
@@ -126,38 +116,12 @@ contract('QuantorPreSale', function (accounts) {
     assert.fail('should have thrown before');
   });
 
-  it('should not allow to update BTC price by not BTC price provider', async function () {
-    try {
-      await this.crowdsale.receiveBtcPrice(420000, {from: accounts[2]});
-    } catch (error) {
-      return assertJump(error);
-    }
-    assert.fail('should have thrown before');
-  });
-
-  it('should allow to set BTC price provider by owner', async function () {
-    await this.crowdsale.setBtcPriceProvider(accounts[2], {from: accounts[0]});
-
-    const newPriceProvider = await this.crowdsale.btcPriceProvider();
-
-    assert.equal(accounts[2], newPriceProvider);
-  });
-
   it('should allow to set ETH price provider by owner', async function () {
     await this.crowdsale.setEthPriceProvider(accounts[2], {from: accounts[0]});
 
     const newPriceProvider = await this.crowdsale.ethPriceProvider();
 
     assert.equal(accounts[2], newPriceProvider);
-  });
-
-  it('should not allow to set BTC price provider by not owner', async function () {
-    try {
-      await this.crowdsale.setBtcPriceProvider(accounts[2], {from: accounts[2]});
-    } catch (error) {
-      return assertJump(error);
-    }
-    assert.fail('should have thrown before');
   });
 
   it('should not allow to set ETH price provider by not owner', async function () {
@@ -172,15 +136,6 @@ contract('QuantorPreSale', function (accounts) {
   it('should not allow to update eth price with zero value', async function () {
     try {
       await this.crowdsale.receiveEthPrice(0, {from: ethPriceProvider});
-    } catch (error) {
-      return assertJump(error);
-    }
-    assert.fail('should have thrown before');
-  });
-
-  it('should not allow to update btc price with zero value', async function () {
-    try {
-      await this.crowdsale.receiveBtcPrice(0, {from: btcPriceProvider});
     } catch (error) {
       return assertJump(error);
     }
@@ -223,7 +178,7 @@ contract('QuantorPreSale', function (accounts) {
   });
 
   it('should allow to transfer ownership when ICO is ended', async function () {
-    advanceToBlock(this.endBlock);
+    advanceToBlock(this.endTime);
 
     await this.crowdsale.transferOwnership(accounts[1]);
     const actual = await this.crowdsale.owner();
@@ -415,7 +370,7 @@ contract('QuantorPreSale', function (accounts) {
 
   it('should not allow purchase if ICO is ended', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
-    advanceToBlock(this.endBlock);
+    advanceToBlock(this.endTime);
 
     try {
       await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
@@ -459,7 +414,7 @@ contract('QuantorPreSale', function (accounts) {
     await this.crowdsale.sendTransaction({value: 12000 * 10 ** 18, from: accounts[1]});
     await this.crowdsale.sendTransaction({value: 500 * 10 ** 18, from: accounts[3]});
 
-    advanceToBlock(this.endBlock);
+    advanceToBlock(this.endTime);
 
     try {
       await this.crowdsale.refund({from: accounts[3]});
@@ -474,7 +429,7 @@ contract('QuantorPreSale', function (accounts) {
 
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[1]});
 
-    advanceToBlock(this.endBlock);
+    advanceToBlock(this.endTime);
     await this.crowdsale.halt();
 
     const balanceBefore = web3.eth.getBalance(accounts[1]);
@@ -491,7 +446,7 @@ contract('QuantorPreSale', function (accounts) {
 
     await this.crowdsale.sendTransaction({value: 1 * 10 ** 18, from: accounts[2]});
 
-    advanceToBlock(this.endBlock);
+    advanceToBlock(this.endTime);
 
     const balanceBefore = web3.eth.getBalance(accounts[2]);
     await this.crowdsale.refund({from: accounts[2]});
