@@ -14,19 +14,19 @@ const btcUsdPrice = 400000; //in cents
 const ethPriceProvider = web3.eth.accounts[8];
 
 function advanceToBlock(number) {
-  if (web3.eth.blockNumber > number) {
+  if (Math.floor(Date.now() / 1000) > number) {
     throw Error(`block number ${number} is in thfe past (current is ${web3.eth.blockNumber})`)
   }
 
-  while (web3.eth.blockNumber < number) {
+  while (Math.floor(Date.now() / 1000) < number) {
     web3.eth.sendTransaction({value: 1, from: web3.eth.accounts[8], to: web3.eth.accounts[7]});
   }
 }
 
 contract('QuantorPreSale', function (accounts) {
   beforeEach(async function () {
-    this.startTime = web3.eth.blockNumber;
-    this.endTime = this.startTime + 20;
+    this.startTime = Math.floor(Date.now() / 1000);
+    this.endTime = startTime + 180; // 3 minutes
 
     this.token = await QuantorToken.new();
     this.whiteList = await InvestorWhiteList.new();
