@@ -10,7 +10,6 @@ const hardCap = 26600000; //in QNT
 const softCap = 2500000; //in QNT
 const beneficiary = web3.eth.accounts[9];
 const ethUsdPrice = 20000; //in cents
-const btcUsdPrice = 400000; //in cents
 const ethPriceProvider = web3.eth.accounts[8];
 
 function advanceToBlock(number) {
@@ -26,7 +25,7 @@ function advanceToBlock(number) {
 contract('QuantorPreSale', function (accounts) {
   beforeEach(async function () {
     this.startTime = Math.floor(Date.now() / 1000);
-    this.endTime = this.startTime + 30; // 30 seconds
+    this.endTime = this.startTime + 10; // 10 seconds
 
     this.token = await QuantorToken.new();
     this.whiteList = await InvestorWhiteList.new();
@@ -211,7 +210,7 @@ contract('QuantorPreSale', function (accounts) {
   });
 
 
-  it('should add 30% bonus if softCap was not reached', async function () {
+  it('should add 35% bonus if softCap was not reached', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
 
     await this.crowdsale.sendTransaction({
@@ -221,7 +220,7 @@ contract('QuantorPreSale', function (accounts) {
 
     //check that investor received proper tokens count
     const balanceOf2 = await this.token.balanceOf(accounts[2]);
-    assert.equal(balanceOf2.valueOf(), 26000 * 10 ** 18);
+    assert.equal(balanceOf2.valueOf(), 2700000 * 10 ** 18);
 
     //check that sender deposit was increased
     const deposited = await this.crowdsale.deposited(accounts[2]);
@@ -229,33 +228,30 @@ contract('QuantorPreSale', function (accounts) {
 
     //check that tokensSold is correct
     const tokensSold1 = await this.crowdsale.tokensSold();
-    assert.equal(tokensSold1.toNumber(), 26000 * 10 ** 18);
+    assert.equal(tokensSold1.toNumber(), 2700000 * 10 ** 18);
   });
 
   it('should add 20% bonus after softCap  reached', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
+    await this.whiteList.addInvestorToWhiteList(accounts[3]);
+
     await this.crowdsale.sendTransaction({
-      value: 10000 * 10 ** 18,
-      from: accounts[2],
-    });
-    await this.crowdsale.sendTransaction({
-      value: 100 * 10 ** 18,
+      value: 125 * 10 ** 18,
       from: accounts[2],
     });
 
-    //2600000 + 24000
+    await this.crowdsale.sendTransaction({
+      value: 1 * 10 ** 18,
+      from: accounts[3],
+    });
 
     //check that investor received proper tokens count
-    const balanceOf2 = await this.token.balanceOf(accounts[2]);
-    assert.equal(balanceOf2.valueOf(), 2624000 * 10 ** 18);
+    const balanceOf2 = await this.token.balanceOf(accounts[3]);
+    assert.equal(balanceOf2.valueOf(), 24000 * 10 ** 18);
 
     //check that sender deposit was increased
-    const deposited = await this.crowdsale.deposited(accounts[2]);
-    assert.equal(deposited.toNumber(), 10100 * 10 ** 18);
-
-    //check that tokensSold is correct
-    const tokensSold1 = await this.crowdsale.tokensSold();
-    assert.equal(tokensSold1.toNumber(), 2624000 * 10 ** 18);
+    const deposited = await this.crowdsale.deposited(accounts[3]);
+    assert.equal(deposited.toNumber(), 1 * 10 ** 18);
   });
 
 
@@ -285,8 +281,8 @@ contract('QuantorPreSale', function (accounts) {
   it('should set flag when softcap is reached', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[1]);
 
-    //ICO softcap will be reached with single 10417 ETH investment due to high volume bonus
-    await this.crowdsale.sendTransaction({value: 10417 * 10 ** 18, from: accounts[1]});
+    //ICO softcap will be reached with single 125 ETH investment
+    await this.crowdsale.sendTransaction({value: 125 * 10 ** 18, from: accounts[1]});
 
     const softCapReached = await this.crowdsale.softCapReached();
     assert.equal(softCapReached, true);
@@ -297,7 +293,7 @@ contract('QuantorPreSale', function (accounts) {
     await this.whiteList.addReferralOf(accounts[1], accounts[2]);
 
     //ICO softcap will be reached with single 9843 ETH investment due to high volume and referral bonus
-    await this.crowdsale.sendTransaction({value: 9843 * 10 ** 18, from: accounts[1]});
+    await this.crowdsale.sendTransaction({value: 125 * 10 ** 18, from: accounts[1]});
 
     const softCapReached = await this.crowdsale.softCapReached();
     assert.equal(softCapReached, true);
@@ -322,7 +318,7 @@ contract('QuantorPreSale', function (accounts) {
   it('should allow withdraw only for owner', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[1]);
 
-    await this.crowdsale.sendTransaction({value: 20000 * 10 ** 18, from: accounts[1]});
+    await this.crowdsale.sendTransaction({value: 130 * 10 ** 18, from: accounts[1]});
 
     try {
       await this.crowdsale.withdraw({from: accounts[1]});
@@ -349,8 +345,8 @@ contract('QuantorPreSale', function (accounts) {
     await this.whiteList.addInvestorToWhiteList(accounts[1]);
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
 
-    await this.crowdsale.sendTransaction({value: 12000 * 10 ** 18, from: accounts[1]});
-    await this.crowdsale.sendTransaction({value: 500 * 10 ** 18, from: accounts[2]});
+    await this.crowdsale.sendTransaction({value: 125 * 10 ** 18, from: accounts[1]});
+    await this.crowdsale.sendTransaction({value: 60 * 10 ** 18, from: accounts[2]});
 
     const oldBenBalanceEth = web3.eth.getBalance(beneficiary);
     const oldIcoContractBalanceQNT = await this.token.balanceOf(this.crowdsale.address).valueOf();
@@ -364,7 +360,7 @@ contract('QuantorPreSale', function (accounts) {
 
     assert.equal(icoContractBalanceQNT, 0);
     assert.equal(icoContractBalanceEth, 0);
-    assert.equal(newBenBalanceEth.minus(oldBenBalanceEth).toNumber(), web3.toWei(12500));
+    assert.equal(newBenBalanceEth.minus(oldBenBalanceEth).toNumber(), web3.toWei(185));
     assert.equal(newBenBalanceQNT.toNumber(), oldIcoContractBalanceQNT.toNumber());
   });
 
@@ -383,7 +379,7 @@ contract('QuantorPreSale', function (accounts) {
   it('should not allow purchase after withdraw', async function () {
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
 
-    await this.crowdsale.sendTransaction({value: 12500 * 10 ** 18, from: accounts[2]});
+    await this.crowdsale.sendTransaction({value: 125 * 10 ** 18, from: accounts[2]});
     await this.crowdsale.withdraw();
 
     try {
@@ -411,8 +407,8 @@ contract('QuantorPreSale', function (accounts) {
     await this.whiteList.addInvestorToWhiteList(accounts[1]);
     await this.whiteList.addInvestorToWhiteList(accounts[3]);
 
-    await this.crowdsale.sendTransaction({value: 12000 * 10 ** 18, from: accounts[1]});
-    await this.crowdsale.sendTransaction({value: 500 * 10 ** 18, from: accounts[3]});
+    await this.crowdsale.sendTransaction({value: 125 * 10 ** 18, from: accounts[1]});
+    await this.crowdsale.sendTransaction({value: 50 * 10 ** 18, from: accounts[3]});
 
     advanceToBlock(this.endTime);
 
