@@ -123,7 +123,7 @@ contract QuantorPreSale is Haltable, PriceReceiver {
 
   function calculateBonus(uint tokens) internal constant returns (uint bonus) {
     if(!softCapReached) {
-      return tokens.mul(30).div(100);
+      return tokens.mul(35).div(100);
     }
     return tokens.mul(20).div(100);
   }
