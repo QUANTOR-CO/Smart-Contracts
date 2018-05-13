@@ -114,7 +114,7 @@ contract QuantorPreSale is Haltable, PriceReceiver {
     Refunded(msg.sender, refund);
   }
 
-  function withdraw() external onlyOwner {
+  function withdraw() external icoEnded onlyOwner {
     require(softCapReached);
     beneficiary.transfer(collected);
     token.transfer(beneficiary, token.balanceOf(this));

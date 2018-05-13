@@ -350,7 +350,7 @@ contract('QuantorPreSale', function (accounts) {
 
     const oldBenBalanceEth = web3.eth.getBalance(beneficiary);
     const oldIcoContractBalanceQNT = await this.token.balanceOf(this.crowdsale.address).valueOf();
-
+    advanceToBlock(this.endTime);
     await this.crowdsale.withdraw();
 
     const newBenBalanceEth = web3.eth.getBalance(beneficiary);
@@ -380,6 +380,7 @@ contract('QuantorPreSale', function (accounts) {
     await this.whiteList.addInvestorToWhiteList(accounts[2]);
 
     await this.crowdsale.sendTransaction({value: 125 * 10 ** 18, from: accounts[2]});
+    advanceToBlock(this.endTime);
     await this.crowdsale.withdraw();
 
     try {
