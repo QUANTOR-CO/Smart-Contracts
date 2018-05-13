@@ -67,6 +67,10 @@ contract PriceProvider is Ownable, usingOraclize {
     watcher = PriceReceiver(newWatcher);
   }
 
+  function setCustomGasPrice(uint gasPrice) external onlyOwner {
+    oraclize_setCustomGasPrice(gasPrice);
+  }
+
   function setUpdateInterval(uint newInterval) external onlyOwner {
     require(newInterval > 0);
     updateInterval = newInterval;
