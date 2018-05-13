@@ -9,7 +9,7 @@ contract PriceProvider is Ownable, usingOraclize {
 
   enum State { Stopped, Active }
 
-  uint public updateInterval = 7200; //2 hours by default
+  uint public updateInterval = 43200; //12 hours by default
 
   uint public currentPrice;
 
