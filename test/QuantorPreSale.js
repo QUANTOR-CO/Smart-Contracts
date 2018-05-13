@@ -26,7 +26,7 @@ function advanceToBlock(number) {
 contract('QuantorPreSale', function (accounts) {
   beforeEach(async function () {
     this.startTime = Math.floor(Date.now() / 1000);
-    this.endTime = startTime + 180; // 3 minutes
+    this.endTime = this.startTime + 30; // 30 seconds
 
     this.token = await QuantorToken.new();
     this.whiteList = await InvestorWhiteList.new();
