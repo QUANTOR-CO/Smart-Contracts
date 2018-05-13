@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.18;
 
 import "./Haltable.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
