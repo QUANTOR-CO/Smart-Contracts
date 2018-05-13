@@ -64,7 +64,7 @@ contract QuantorPreSale is Haltable, PriceReceiver {
   }
 
   modifier minInvestment() {
-    require(msg.value >= 0.1 * 1 ether);
+    require(msg.value.mul(ethUsdRate).div(QNTUsdRate) >= 50000 * 1 ether);
     _;
   }
 
