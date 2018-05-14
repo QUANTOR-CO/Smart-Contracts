@@ -50,8 +50,6 @@ contract QuantorPreSale is Haltable, PriceReceiver {
 
   event SoftCapReached(uint softCap);
 
-  event Log(uint number);
-
   event NewContribution(address indexed holder, uint tokenAmount, uint etherAmount);
 
   event NewReferralTransfer(address indexed investor, address indexed referral, uint tokenAmount);
