@@ -8,6 +8,7 @@ import "./InvestorWhiteList.sol";
 import "./abstract/PriceReceiver.sol";
 
 contract QuantorPreSale is Haltable, PriceReceiver {
+
   using SafeMath for uint;
 
   string public constant name = "Quantor Token ICO";
@@ -44,8 +45,12 @@ contract QuantorPreSale is Haltable, PriceReceiver {
 
   mapping (address => uint) public deposited;
 
+  uint public constant PRICE_BEFORE_SOFTCAP = 65; // in cents * 100
+  uint public constant PRICE_AFTER_SOFTCAP = 80; // in cents * 100
 
   event SoftCapReached(uint softCap);
+
+  event Log(uint number);
 
   event NewContribution(address indexed holder, uint tokenAmount, uint etherAmount);
 
@@ -121,19 +126,16 @@ contract QuantorPreSale is Haltable, PriceReceiver {
     crowdsaleFinished = true;
   }
 
-  function calculateBonus(uint tokens) internal constant returns (uint bonus) {
-    if(!softCapReached) {
-      if (softCap < (tokensSold.add(tokens))) {
-        uint minimalBonus = (tokensSold.add(tokens)).sub(softCap);
-        uint maximalBonus = (tokens - minimalBonus);
-        minimalBonus = minimalBonus.mul(20).div(100);
-        maximalBonus = maximalBonus.mul(35).div(100);
-        return minimalBonus.add(maximalBonus);
-      } else {
-        return tokens.mul(35).div(100);
-      }
+  function calculateTokens(uint ethReceived) internal view returns (uint) {
+    if (!softCapReached) {
+      uint tokens = ethReceived.mul(ethUsdRate.mul(100)).div(PRICE_BEFORE_SOFTCAP);
+      if (softCap >= tokensSold.add(tokens)) return tokens;
+      uint firstPart = softCap.sub(tokensSold);
+      uint  firstPartInWei = firstPart.mul(PRICE_BEFORE_SOFTCAP).div(ethUsdRate.mul(100));
+      uint secondPartInWei = ethReceived.sub(firstPart.mul(PRICE_BEFORE_SOFTCAP).div(ethUsdRate.mul(100)));
+      return firstPart.add(secondPartInWei.mul(ethUsdRate.mul(100)).div(PRICE_AFTER_SOFTCAP));
     }
-    return tokens.mul(20).div(100);
+    return ethReceived.mul(ethUsdRate.mul(100)).div(PRICE_AFTER_SOFTCAP);
   }
 
   function receiveEthPrice(uint ethUsdPrice) external onlyEthPriceProvider {
@@ -154,9 +156,7 @@ contract QuantorPreSale is Haltable, PriceReceiver {
   function doPurchase() private icoActive inNormalState {
     require(!crowdsaleFinished);
 
-    uint tokens = msg.value.mul(ethUsdRate).div(QNTUsdRate);
-
-    tokens = tokens.add(calculateBonus(tokens));
+    uint tokens = calculateTokens(msg.value);
 
     uint newTokensSold = tokensSold.add(tokens);
 
